@@ -10,48 +10,6 @@ def init(module, log_name):
     data['log'] = logging.getLogger(log_name)
 
 
-class TestLog(object):
-
-    def __init__(self):
-        self.clear()
-        self._name = None
-
-    def clear(self):
-        self._info = []
-        self._warning = []
-        self._debug = []
-
-    def tester(self, test, name):
-        self._name = name
-        self._test = test
-        return self
-
-    def get(self, name):
-        return getattr(self, '_' + name)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self._name = None
-        self._test = None
-
-    def assertLog(self, text, *args, **kwargs):
-        args = tuple([text] + list(args))
-        log = self.get(self._name).pop(0)
-        self._test.assertEqual(args, log[0])
-        self._test.assertEqual(kwargs, log[1])
-
-    def info(self, *args, **kwargs):
-        self._info.append((args, kwargs))
-
-    def warning(self, *args, **kwargs):
-        self._warning.append((args, kwargs))  # pragma: no cover
-
-    def debug(self, *args, **kwargs):
-        self._debug.append((args, kwargs))  # pragma: no cover
-
-
 def _get_args_as_string(args):
     args = list(args)
     args = [str(arg) for arg in args]
@@ -79,7 +37,7 @@ def debug(*args, **kwargs):
 
 
 def error(*args, **kwargs):
-    data['log'].warning(*args, **kwargs)
+    data['log'].error(*args, **kwargs)
 
 
 def start_file_logging(path):
@@ -88,10 +46,6 @@ def start_file_logging(path):
     hdlr.setFormatter(fmt)
     data['log'].addHandler(hdlr)
     data['log'].setLevel(logging.DEBUG)
-
-
-def start_test_logging():
-    data['log'] = TestLog()
 
 
 def start_stdout_logging():

@@ -21,3 +21,4 @@ TODO
 htmlcov
 *.egg
 *.log
+build
