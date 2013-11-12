@@ -12,32 +12,38 @@ class SoklogTest(unittest.TestCase):
         soklog.init(1, 2)
 
         mock.assert_called_with(2)
-        self.assertEqual(1, soklog.data['module'])
-        self.assertEqual(mock.return_value, soklog.data['log'])
+        self.assertEqual(1, soklog._DEFAULT.module)
+        self.assertEqual(mock.return_value, soklog._DEFAULT.log)
 
-    def test__get_args_as_string(self):
-        self.assertEqual('1 2 3', soklog._get_args_as_string([1, 2, '3']))
+    @patch('soklog.logging.getLogger')
+    def test__get_args_as_string(self, mock):
+        module = MagicMock()
+        log = MagicMock()
+        soklog_obj = soklog.SokLog(module, log)
 
-    @patch.dict(soklog.data, {'log': MagicMock()})
-    def test_info(self):
+        self.assertEqual('1 2 3', soklog_obj._get_args_as_string([1, 2, '3']))
+
+    @patch.object(soklog._DEFAULT, 'log')
+    def test_info(self, log_mock):
         soklog.info(1, 2, 3, something=4)
-        soklog.data['log'].info.assert_called_with("1 2 3", something=4)
+        log_mock.info.assert_called_with("1 2 3", something=4)
 
-    @patch.dict(soklog.data, {'log': MagicMock()})
-    def test_warning(self):
+    @patch.object(soklog._DEFAULT, 'log')
+    def test_warning(self, log_mock):
         soklog.warning(1, 2, 3, something=4)
-        soklog.data['log'].warning.assert_called_with("1 2 3", something=4)
+        log_mock.warning.assert_called_with("1 2 3", something=4)
 
-    @patch.dict(soklog.data, {'log': MagicMock(), 'module': soklog})
-    def test_debug(self):
-        soklog.debug(1, 2, 3, something=4)
-        soklog.data['log'].debug.assert_called_with(
-            './tests.py:33 1 2 3', something=4)
+    @patch.object(soklog._DEFAULT, 'log')
+    def test_debug(self, log_mock):
+        with patch.object(soklog._DEFAULT, 'module', soklog):
+            soklog.debug(1, 2, 3, something=4)
+            log_mock.debug.assert_called_with(
+                './tests.py:39 1 2 3', level=2, something=4)
 
-    @patch.dict(soklog.data, {'log': MagicMock()})
-    def test_error(self):
+    @patch.object(soklog._DEFAULT, 'log')
+    def test_error(self, log_mock):
         soklog.error(1, 2, 3, something=4)
-        soklog.data['log'].error.assert_called_with(1, 2, 3, something=4)
+        log_mock.error.assert_called_with(1, 2, 3, something=4)
 
     @patch('soklog.logging.basicConfig')
     def test_start_stdout_logging(self, mock):
@@ -48,15 +54,15 @@ class SoklogTest(unittest.TestCase):
             datefmt="%H:%M:%S"
         )
 
-    @patch.dict(soklog.data, {'log': MagicMock()})
     @patch('soklog.logging')
     def test_start_file_logging(self, mock):
-        soklog.start_file_logging('somewhere')
-        mock.FileHandler.assert_called_with('somewhere')
-        mock.Formatter.assert_called_with("%(asctime)-10s %(message)s")
+        with patch.object(soklog._DEFAULT, 'log') as log_mock:
+            soklog.start_file_logging('somewhere')
+            mock.FileHandler.assert_called_with('somewhere')
+            mock.Formatter.assert_called_with("%(asctime)-10s %(message)s")
 
-        hdlr = mock.FileHandler.return_value
-        hdlr.setFormatter.assert_called_with(mock.Formatter.return_value)
+            hdlr = mock.FileHandler.return_value
+            hdlr.setFormatter.assert_called_with(mock.Formatter.return_value)
 
-        soklog.data['log'].addHandler.assert_called_with(hdlr)
-        soklog.data['log'].setLevel.assert_called_with(mock.DEBUG)
+            log_mock.addHandler.assert_called_with(hdlr)
+            log_mock.setLevel.assert_called_with(mock.DEBUG)
