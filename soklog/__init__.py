@@ -6,8 +6,7 @@ from os import path
 class SokLog(object):
 
     def __init__(self, module, log_name):
-        self.module = module
-        self.log = logging.getLogger(log_name)
+        self.setUpModule(module, log_name)
 
     def _get_args_as_string(self, args):
         args = list(args)
@@ -48,6 +47,10 @@ class SokLog(object):
             format="%(asctime)-10s %(message)s",
             datefmt="%H:%M:%S"
         )
+
+    def setUpModule(self, module, log_name):
+        self.module = module
+        self.log = logging.getLogger(log_name)
 
 _DEFAULT = SokLog(None, None)
 
